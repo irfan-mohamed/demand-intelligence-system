@@ -1,2 +1,1 @@
-data\raw\
-*.csv
+data/raw/*.csv
