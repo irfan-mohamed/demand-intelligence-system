@@ -95,6 +95,11 @@ WITH lagged AS (
         sd.sale_date,
         sd.product_id,
         sd.total_quantity,
+        COALESCE(AVG(sd.total_quantity) OVER (
+        PARTITION BY sd.product_id
+        ORDER BY sd.sale_date
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+        ), 0) AS product_avg_qty,
         sd.avg_selling_price,
         sd.total_discount,
         sd.avg_landing_cost,
@@ -111,37 +116,38 @@ WITH lagged AS (
         CASE 
             WHEN EXTRACT(DOW FROM sd.sale_date) IN (0,6) THEN 1 ELSE 0 
         END AS is_weekend,
-        LAG(sd.total_quantity,  1) OVER w AS qty_lag1,
-        LAG(sd.total_quantity,  7) OVER w AS qty_lag7,
-        LAG(sd.total_quantity, 14) OVER w AS qty_lag14,
-        LAG(sd.total_quantity, 28) OVER w AS qty_lag28,
-        LAG(sd.avg_selling_price, 1) OVER w AS price_lag1,
-        LAG(sd.avg_selling_price, 7) OVER w AS price_lag7,
-        LAG(sd.has_discount, 1)  OVER w AS discount_lag1,
-        LAG(sd.discount_rate, 1) OVER w AS discount_rate_lag1,
-        AVG(sd.total_quantity) OVER (
+        COALESCE(LAG(sd.total_quantity,  1) OVER w, 0) AS qty_lag1,
+        COALESCE(LAG(sd.total_quantity,  7) OVER w, 0) AS qty_lag7,
+        COALESCE(LAG(sd.total_quantity, 14) OVER w, 0) AS qty_lag14,
+        COALESCE(LAG(sd.total_quantity, 28) OVER w, 0) AS qty_lag28,
+        COALESCE(LAG(sd.avg_selling_price, 1) OVER w, 0) AS price_lag1,
+        COALESCE(LAG(sd.avg_selling_price, 7) OVER w, 0) AS price_lag7,
+        COALESCE(LAG(sd.has_discount, 1)  OVER w, 0) AS discount_lag1,
+        COALESCE(LAG(sd.discount_rate, 1) OVER w, 0) AS discount_rate_lag1,
+        COALESCE(AVG(sd.total_quantity) OVER (
             PARTITION BY sd.product_id ORDER BY sd.sale_date
-            ROWS BETWEEN 6  PRECEDING AND 1 PRECEDING) AS rolling_mean_7,
-        AVG(sd.total_quantity) OVER (
+            ROWS BETWEEN 6  PRECEDING AND 1 PRECEDING), 0) AS rolling_mean_7,
+        COALESCE(AVG(sd.total_quantity) OVER (
             PARTITION BY sd.product_id ORDER BY sd.sale_date
-            ROWS BETWEEN 13 PRECEDING AND 1 PRECEDING) AS rolling_mean_14,
-        AVG(sd.total_quantity) OVER (
+            ROWS BETWEEN 13 PRECEDING AND 1 PRECEDING), 0) AS rolling_mean_14,
+        COALESCE(AVG(sd.total_quantity) OVER (
             PARTITION BY sd.product_id ORDER BY sd.sale_date
-            ROWS BETWEEN 29 PRECEDING AND 1 PRECEDING) AS rolling_mean_30,
-        STDDEV(sd.total_quantity) OVER (
+            ROWS BETWEEN 29 PRECEDING AND 1 PRECEDING), 0) AS rolling_mean_30,
+        COALESCE(STDDEV(sd.total_quantity) OVER (
             PARTITION BY sd.product_id ORDER BY sd.sale_date
-            ROWS BETWEEN 6  PRECEDING AND 1 PRECEDING) AS rolling_std_7,
-        STDDEV(sd.total_quantity) OVER (
+            ROWS BETWEEN 6  PRECEDING AND 1 PRECEDING), 0) AS rolling_std_7,
+        COALESCE(STDDEV(sd.total_quantity) OVER (
             PARTITION BY sd.product_id ORDER BY sd.sale_date
-            ROWS BETWEEN 29 PRECEDING AND 1 PRECEDING) AS rolling_std_30,
-        MAX(sd.total_quantity) OVER (
+            ROWS BETWEEN 29 PRECEDING AND 1 PRECEDING), 0) AS rolling_std_30,
+        COALESCE(MAX(sd.total_quantity) OVER (
             PARTITION BY sd.product_id ORDER BY sd.sale_date
-            ROWS BETWEEN 29 PRECEDING AND 1 PRECEDING) AS rolling_max_30,
+            ROWS BETWEEN 29 PRECEDING AND 1 PRECEDING), 0) AS rolling_max_30,
         (sd.avg_selling_price - LAG(sd.avg_selling_price,1) OVER w) / NULLIF(LAG(sd.avg_selling_price,1) OVER w, 0) AS price_change_pct
     FROM core_layer.sales_daily sd
     WINDOW w AS (PARTITION BY sd.product_id ORDER BY sd.sale_date)
 )
 SELECT
+    l.*,
     p.l0_category_id,
     p.l1_category_id,
     p.l2_category_id,
