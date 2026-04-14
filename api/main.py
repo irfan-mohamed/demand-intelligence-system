@@ -4,6 +4,7 @@ main.py file the fastapi interface
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
+from datetime import date
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from src.decision_engine.decision_engine import get_latest_features, load_prediction_models, predict_demand, predict_elasticity, decision_recommendation
@@ -34,6 +35,7 @@ class SegmentResponse(BaseModel):
 
 class RecommendationResponse(BaseModel):
     product_id : int
+    prediction_date : date
     reorder_qty : float
     safety_stock : float
     demand_q10 : float
@@ -41,7 +43,8 @@ class RecommendationResponse(BaseModel):
     demand_q90 : float
     adjusted_demand : float
     price_elasticity : float
-    abc_xyz : str    
+    abc_xyz : str
+    urgency : str
 
 @app.get("/")
 def root():
@@ -93,6 +96,7 @@ def recommendation(product_id: int, upcoming_discount: bool = False):
         raise HTTPException(status_code = 404, detail = "No Product Id Found")
     return RecommendationResponse(
         product_id = product_id,
+        prediction_date = result['prediction_date'],
         reorder_qty = result['reorder_qty'],
         safety_stock = result['safety_stock'],
         demand_q10 = result['demand_q10'],
@@ -100,5 +104,6 @@ def recommendation(product_id: int, upcoming_discount: bool = False):
         demand_q90 = result['demand_q90'],
         adjusted_demand = result['adjusted_demand'],
         price_elasticity = result['price_elasticity'],
-        abc_xyz = result['abc_xyz']
+        abc_xyz = result['abc_xyz'],
+        urgency = result['urgency']
     )
