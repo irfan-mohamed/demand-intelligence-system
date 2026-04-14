@@ -102,11 +102,11 @@ def decision_recommendation(product_id, models, upcoming_discount = False):
 
     reorder_qty = reorder_point # Need to substract inventory stock data
 
-    if q10 * LEAD_TIME_DAYS > reorder_point:
-        urgency = "CRITICAL"
-    elif q50 * LEAD_TIME_DAYS > reorder_point:
+    risk = (q90 - q50) / q50
+
+    if risk > 0.4:
         urgency = "HIGH"
-    elif q50 > 0:
+    elif risk > 0.2:
         urgency = "MEDIUM"
     else:
         urgency = "LOW"
@@ -124,20 +124,6 @@ def decision_recommendation(product_id, models, upcoming_discount = False):
         "abc_xyz": f"{abc}{xyz}",
         "urgency" : urgency
     }
-
-# Batch Recommendation
-def batch_decisions(product_ids, models):
-
-    results = []
-
-    for pid in product_ids:
-        try:
-            res = decision_recommendation(pid, models)
-            results.append(res)
-        except Exception as e:
-            print(f"Error for {pid}: {e}")
-
-    return pd.DataFrame(results)
 
 if __name__ == "__main__":
 
