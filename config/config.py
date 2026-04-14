@@ -1,13 +1,17 @@
 '''
     congig.py -- configuration files for postgres database
 '''
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "database": "flipkart_sales", 
-    "user": "postgres",          
-    "password": "Irfan@123", 
+    "host": os.getenv('DB_HOST'),
+    "port": os.getenv('DB_PORT'),
+    "database": os.getenv('DB_NAME'), 
+    "user": os.getenv('DB_USER'),          
+    "password": os.getenv('DB_PASSWORD'), 
 }
 
 SCHEMAS = {
