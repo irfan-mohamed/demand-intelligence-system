@@ -48,9 +48,9 @@ def get_latest_features(product_id: int):
 def predict_demand(models, features):
     X = features[FEATURES].fillna(0)
 
-    q10 = max(0, float(models["q10"].predict(X)[0]))
-    q50 = max(0, float(models["q50"].predict(X)[0]))
-    q90 = max(0, float(models["q90"].predict(X)[0]))
+    q10 = max(0, float(np.expm1(models["q10"].predict(X)[0])))
+    q50 = max(0, float(np.expm1(models["q50"].predict(X)[0])))
+    q90 = max(0, float(np.expm1(models["q90"].predict(X)[0])))
 
     return q10, q50, q90
 
@@ -75,7 +75,8 @@ def decision_recommendation(product_id, models, upcoming_discount = False):
         return {"No Data For The Product {product_id}"}
 
     row = features.iloc[0]
-    
+    print(row)
+    prediction_date = features["sale_date"].max() + pd.Timedelta(days =1)
     # Forecast Demand
     q10, q50, q90 = predict_demand(models, features)
 
@@ -93,13 +94,13 @@ def decision_recommendation(product_id, models, upcoming_discount = False):
     multiplier = CLASS_MULTIPLIERS.get(abc, {}).get(xyz, 1.2)
 
     # Safety Stock
-    uncertainty = uncertainty = max(q90 - q50, q50 * 0.1)
+    uncertainty = max(q90 - q50, q50 * 0.1)
     safety_stock = uncertainty * multiplier
 
     # Reorder Point
     reorder_point = (adj_q50 * LEAD_TIME_DAYS) + safety_stock
 
-    reorder_qty = reorder_point
+    reorder_qty = reorder_point # Need to substract inventory stock data
 
     if q10 * LEAD_TIME_DAYS > reorder_point:
         urgency = "CRITICAL"
@@ -112,6 +113,7 @@ def decision_recommendation(product_id, models, upcoming_discount = False):
 
     return {
         "product_id": product_id,
+        "prediction_date": prediction_date,
         "reorder_qty": math.ceil(reorder_qty),
         "safety_stock": math.ceil(safety_stock),
         "demand_q10": round(q10, 2),
