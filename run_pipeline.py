@@ -11,8 +11,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname('__file__')))
 from src.utils.db import run_sql_file
 
 SQL_STAGES = [
-    # ("staging", "sql/01_staging/01_create_stage.sql"),
-    # ("core", "sql/02_core/02_create_core.sql"),
+    ("staging", "sql/01_staging/01_create_stage.sql"),
+    ("core", "sql/02_core/02_create_core.sql"),
     ("features", "sql/03_features/03_create_features.sql")
 ]
 
